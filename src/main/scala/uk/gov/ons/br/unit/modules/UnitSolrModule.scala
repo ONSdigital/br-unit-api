@@ -8,9 +8,9 @@ import javax.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
 import play.api.inject.ApplicationLifecycle
 import play.api.{Configuration, Environment}
-import uk.gov.ons.br.config.AsyncSolrClientLoader
+import uk.gov.ons.br.config.{BaseUrlConfigLoader, SolrClientConfig, SolrClientConfigLoader}
 import uk.gov.ons.br.repository.SearchRepository
-import uk.gov.ons.br.repository.solr.solrs.SolrsClientWrapper
+import uk.gov.ons.br.repository.solr.solrs.{AsyncSolrClientMaker, SolrsClientWrapper}
 import uk.gov.ons.br.repository.solr.{SolrClient, SolrSearchRepository}
 import uk.gov.ons.br.unit.models.UnitData
 import uk.gov.ons.br.unit.repository.solr.UnitDataSolrDocumentMapper
@@ -31,20 +31,21 @@ class UnitSolrModule(@silent environment: Environment, configuration: Configurat
   private lazy val solrLogger = LoggerFactory.getLogger("solr")
 
   override def configure(): Unit = {
+    bind(classOf[SolrClientConfig]).toInstance(loadSolrClientConfig())
     bind(classOf[SolrClient]).to(classOf[SolrsClientWrapper])
+  }
+
+  private def loadSolrClientConfig(): SolrClientConfig = {
+    val solrClientConfigLoader = new SolrClientConfigLoader(BaseUrlConfigLoader)
+    solrClientConfigLoader.load(configuration.underlying, "search.db.solr")
   }
 
   @Singleton
   @Provides
-  def providesAsyncSolrClientLoader: AsyncSolrClientLoader =
-    new AsyncSolrClientLoader(solrLogger)
-
-  @Singleton
-  @Provides
   def providesAsyncSolrClient(@Inject() applicationLifecycle: ApplicationLifecycle,
-                              asyncSolrClientLoader: AsyncSolrClientLoader)
+                              solrClientConfig: SolrClientConfig)
                              (implicit ec: ExecutionContext): AsyncSolrClient[Future] = {
-    val asyncSolrClient = asyncSolrClientLoader.load(configuration.underlying, "search.db.solr")
+    val asyncSolrClient = AsyncSolrClientMaker.asyncSolrClientFor(solrClientConfig)
     applicationLifecycle.addStopHook(() => Future(asyncSolrClient.shutdown()))
     asyncSolrClient
   }
