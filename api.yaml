@@ -1,0 +1,125 @@
+openapi: 3.0.2
+info:
+  title: Business Registers Unit Service
+  description: Unit Search for Business Registers
+  contact:
+    name: Business Registers
+  license:
+    name: MIT License
+    url: 'https://github.com/ONSdigital/br-unit-api/blob/master/LICENSE'
+  version: 0.1.0
+servers:
+  - url: 'http://localhost:9000'
+    description: Local Development Server
+paths:
+  '/v1/unit':
+    get:
+      tags:
+        - Search
+      summary: Search Units by Search Term
+      description: >-
+        Provides a general search across unit fields for the specified search term
+      operationId: searchForTerm
+      parameters:
+        - name: searchTerm
+          in: query
+          description: the term to search for
+          required: true
+          schema:
+            type: string
+            example: '1000012345000039'
+      responses:
+        '200':
+          description: the search completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnitDataList'
+              examples:
+                empty:
+                  summary: No results were found matching searchTerm
+                  value: '[]'
+        '400':
+          description: a searchTerm was not specified
+        '500':
+          description: an error has occurred
+        '504':
+          description: >-
+            a response was not received from the search engine within the required
+            time interval
+components:
+  schemas:
+    UnitDataList:
+      description: A list of UnitData elements
+      type: array
+      items:
+        $ref: '#/components/schemas/UnitData'
+    UnitData:
+      description: Represents Unit Data
+      type: object
+      required:
+        - unitref
+        - unitType
+        - name
+        - legalStatus
+        - sic
+        - address
+      properties:
+        unitref:
+          type: string
+          example: '1000012345000039'
+        unitType:
+          type: string
+          enum:
+            - LEGAL_UNIT
+            - PAYE
+            - VAT
+        name:
+          type: string
+          example: Big Box Cereal Limited
+        tradingStyle:
+          type: string
+          example: Big Box Cereal
+        legalStatus:
+          type: string
+          example: A
+        sic:
+          type: string
+          example: '10612'
+        turnover:
+          type: integer
+          example: 10
+        payeJobs:
+          type: integer
+          example: 2
+        address:
+          $ref: '#/components/schemas/Address'
+        parentUnitref:
+          type: string
+          example: '1100000063'
+    Address:
+      description: The unit address
+      type: object
+      required:
+        - line1
+        - postcode
+      properties:
+        line1:
+          type: string
+          example: Lane Top Farm
+        line2:
+          type: string
+          example: 1 Bottom Lane
+        line3:
+          type: string
+          example: Blackshaw Head
+        line4:
+          type: string
+          example: Hebden Bridge
+        line5:
+          type: string
+          example: West Yorkshire
+        postcode:
+          type: string
+          example: SS5 4PR
+
