@@ -26,5 +26,5 @@ class UnitSearchModule extends AbstractModule {
 
   @Provides
   def providesSearchResultHandler: SearchResultHandler[UnitData] =
-    new JsonSearchResultHandler[UnitData]()
+    JsonSearchResultHandler.apply[UnitData]
 }
